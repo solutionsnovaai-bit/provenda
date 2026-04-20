@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROVENDA — Sua Gráfica de Bolso</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<canvas id="bg-canvas"></canvas>
+<canvas id="confetti-canvas"></canvas>
+
+<!-- ═══ CHECKOUT MODAL ═══ -->
+<div class="modal-overlay" id="checkout-overlay">
+  <div class="modal">
+    <div class="modal-top-bar"></div>
+    <button class="modal-close" id="modal-close" aria-label="Fechar">✕</button>
+    <div class="modal-body">
+      <span class="modal-badge">🔒 Compra 100% Segura</span>
+      <h2>Acesse o<br>Provenda Agora</h2>
+      <div class="modal-price-row">
+        <span class="modal-price-from">R$ 197,00</span>
+      </div>
+      <div class="modal-price-main"><sup>R$</sup>47</div>
+      <p class="modal-price-sub">Pagamento único · Acesso vitalício · Sem mensalidade</p>
+
+      <a href="#" class="modal-btn" id="finalize-btn">
+        Quero o Provenda por R$47 →
+      </a>
+      <p class="modal-secure">🔒 Ambiente seguro · Hotmart · Garantia 7 dias</p>
+
+      <div class="modal-divider"></div>
+
+      <div class="modal-items">
+        <div class="modal-item">Protocolo Status Vendedor completo</div>
+        <div class="modal-item">Módulo "Do Zero ao Primeiro Status" em vídeo</div>
+        <div class="modal-item">30 variações de prompt prontas</div>
+        <div class="modal-item">Guia de melhores horários para postar</div>
+        <div class="modal-item">Método "Do Catálogo ao Pedido"</div>
+        <div class="modal-item">Comunidade exclusiva com atualizações mensais</div>
+        <div class="modal-item">Bônus: Módulo Provenda Freelancer</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar z">🟢 &nbsp;Método testado — Mais de 1.200 empreendedores já usam o Provenda</div>
+
+<!-- URGENCIA -->
+<div class="urgencia z">⚠️ Preço de lançamento encerra em <strong>48 horas</strong> — depois o valor dobra.</div>
+
+<!-- ═══ HERO ═══ -->
+<section class="hero z">
+  <div class="hero-glow"></div>
+  <div class="container">
+    <div class="reveal-wrap" style="margin-bottom:36px">
+      <div class="reveal-inner">
+        <div class="hero-badge">🔥 Protocolo Status Vendedor</div>
+      </div>
+    </div>
+    <div class="reveal-wrap">
+      <h1 class="reveal-inner">
+        Sua <span class="stroke">gráfica</span><br>
+        de <span class="amber">bolso.</span>
+      </h1>
+    </div>
+    <p class="hero-tagline fade-up">
+      A dor não é só o Canva — é a gráfica também. Dias, semanas pra criar um catálogo que pode nem dar certo.<br>
+      <strong>Agora tudo está na palma da sua mão.</strong>
+    </p>
+    <div class="fade-up" style="transition-delay:0.1s">
+      <a href="#oferta" class="btn-cta">Quero o Método Provenda Agora</a>
+      <span class="hero-note">✅ Acesso imediato · IA gratuita · Qualquer celular</span>
+    </div>
+    <div class="hero-stats fade-up" style="transition-delay:0.2s">
+      <div class="hero-stat">
+        <span>3min</span>
+        <p>Catálogo pronto</p>
+      </div>
+      <div class="hero-stat">
+        <span>0</span>
+        <p>Skills em design</p>
+      </div>
+      <div class="hero-stat">
+        <span>R$0</span>
+        <p>Custo de ferramenta</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ DOR ═══ -->
+<section class="dor z">
+  <div class="container">
+    <span class="section-tag fade-up">Você já passou por isso?</span>
+    <div class="reveal-wrap">
+      <h2 class="section-title reveal-inner">Antes do Provenda,<br>era assim.</h2>
+    </div>
+    <ul class="dor-list fade-up">
+      <li><i class="icon">✕</i><span><strong>Domingo à noite no Canva de novo</strong> — atualizando preço, trocando foto, errando o alinhamento, recomeçando do zero. A família tá lá e você tá na tela.</span></li>
+      <li><i class="icon">✕</i><span><strong>Catálogo que envergonha</strong> — aquela vontade de mostrar o produto mas o visual não representa o valor que você entrega.</span></li>
+      <li><i class="icon">✕</i><span><strong>Pagando designer ou agência</strong> — R$ 300, R$ 500 por mês pra atualizar um catálogo simples. Dinheiro saindo e resultado que demora dias.</span></li>
+      <li><i class="icon">✕</i><span><strong>Concorrente postando todo dia</strong> — você vê lá na timeline enquanto seu Status fica dias sem nada. Visibilidade zero, vendas travadas.</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══ VIRADA ═══ -->
+<section class="virada z">
+  <div class="container">
+    <span class="section-tag fade-up">A Descoberta</span>
+    <div class="reveal-wrap">
+      <h2 class="section-title reveal-inner">E se você não precisasse<br>de nada disso?</h2>
+    </div>
+    <div class="virada-box fade-up">
+      <span class="label">Mecanismo Único</span>
+      <h2>Conheça o<br><span>Método Provenda</span></h2>
+      <p>
+        Não é template. Não é curso de Canva. Não é mais uma ferramenta cara pra aprender.<br><br>
+        <strong>É um protocolo onde você digita o que quer vender — e em minutos, seu catálogo visual está pronto pra dominar o Status do WhatsApp.</strong><br><br>
+        Usando IAs 100% gratuitas, do celular que você já tem no bolso. Funciona pra dona de loja, revendedora, marmiteiro, prestador de serviço — e até pra quem quer cobrar por isso.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ COMO FUNCIONA ═══ -->
+<section class="como z">
+  <div class="container">
+    <span class="section-tag fade-up">Simplicidade Total</span>
+    <div class="reveal-wrap">
+      <h2 class="section-title reveal-inner">Como funciona<br>na prática</h2>
+    </div>
+    <div class="divider fade-up"></div>
+    <div class="steps fade-up">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>Você nos fala o que vende</h3>
+          <p>Nome do produto, preço, diferencial. No celular, no caminho do trabalho, em 2 minutos.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>Aplica o Protocolo Provenda</h3>
+          <p>Um prompt estratégico — que você aprende uma vez e usa pra sempre — enviado pra IA gratuita de sua escolha.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>Catálogo pronto. Status atualizado. Vendas chegando.</h3>
+          <p>Visual profissional, cara de marca. Você posta no Status e começa a receber mensagens ainda de manhã.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PARA QUEM ═══ -->
+<section class="para-quem z">
+  <div class="container">
+    <span class="section-tag fade-up">Feito pra você?</span>
+    <div class="reveal-wrap">
+      <h2 class="section-title reveal-inner">O Provenda é pra quem<br>quer resultado de verdade</h2>
+    </div>
+    <div class="audience-grid fade-up">
+      <div class="audience-card">
+        <span class="card-icon">🛍️</span>
+        <h3>O Empreendedor Sobrecarregado</h3>
+        <p>Você vende todos os dias mas não tem tempo de divulgar direito. Com o Provenda, seu catálogo atualizado aparece no Status enquanto você foca no que importa.</p>
+      </div>
+      <div class="audience-card">
+        <span class="card-icon">📱</span>
+        <h3>O Jovem Que Quer Ganhar Dinheiro</h3>
+        <p>Não precisa de faculdade, não precisa de capital. Com um celular e o Método Provenda, você presta esse serviço pra dezenas de comerciantes e cria renda recorrente real.</p>
+      </div>
+      <div class="audience-card">
+        <span class="card-icon">🍱</span>
+        <h3>Marmiteiros e Prestadores</h3>
+        <p>Cardápio novo todo dia, sem enrolação. Foto do prato, nome, preço — prompt aplicado — catálogo pronto antes das 7h da manhã.</p>
+      </div>
+      <div class="audience-card">
+        <span class="card-icon">👗</span>
+        <h3>Revendedoras e Consultoras</h3>
+        <p>Chegou novidade? Em minutos você já tem um catálogo bonito pras clientes. Profissional, sem depender de ninguém, sem esperar designer.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ ENTREGÁVEIS ═══ -->
+<section class="entrega z">
+  <div class="container">
+    <span class="section-tag fade-up">Tudo que você recebe</span>
+    <div class="reveal-wrap">
+      <h2 class="section-title reveal-inner">O que está dentro<br><span style="color:var(--amber)">do Provenda</span></h2>
+    </div>
+    <div class="divider fade-up"></div>
+    <ul class="entrega-list fade-up">
+      <li>O <strong>Protocolo Status Vendedor completo</strong> — o prompt mestre que transforma qualquer produto numa vitrine profissional</li>
+      <li>Módulo <strong>"Do Zero ao Primeiro Status"</strong> — passo a passo em vídeo, funciona em qualquer celular</li>
+      <li>Biblioteca de <strong>30 variações de prompt</strong> para moda, alimentação, serviços e revenda</li>
+      <li>Guia <strong>"Melhores Horários para Postar no Status"</strong> — quando seu catálogo gera mais pedidos</li>
+      <li>Método <strong>"Do Catálogo ao Pedido"</strong> — textos prontos para converter quem viu em comprador</li>
+      <li>Acesso à <strong>comunidade exclusiva</strong> com atualizações mensais conforme as IAs evoluem</li>
+    </ul>
+    <div class="entrega-bonus fade-up">
+      <span class="bonus-tag">🎁 Bônus exclusivo para quem aderir agora</span>
+      <p><strong>Módulo "Provenda Freelancer"</strong> — Como cobrar, precificar e fechar contratos mensais oferecendo esse serviço pra comerciantes locais. Transforme o método num negócio de R$2.000 a R$5.000/mês.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ DEPOIMENTOS ═══ -->
+<section class="depoimentos z">
+  <div class="container">
+    <span class="section-tag fade-up">Resultados reais</span>
+    <div class="reveal-wrap">
+      <h2 class="section-title reveal-inner">Quem já usa<br>não volta atrás</h2>
+    </div>
+    <div class="depo-grid fade-up">
+      <div class="depo-card">
+        <div class="depo-stars">★★★★★</div>
+        <p>"Eu passava 3 horas no Canva todo domingo. Agora em 5 minutos tô com o catálogo da semana pronto. Minhas vendas no Status triplicaram em 2 meses."</p>
+        <div class="depo-author">
+          <div class="depo-avatar">JL</div>
+          <div>
+            <div class="depo-name">Juliane L.</div>
+            <div class="depo-role">Revendedora, São Paulo</div>
+          </div>
+        </div>
+      </div>
+      <div class="depo-card">
+        <div class="depo-stars">★★★★★</div>
+        <p>"Comecei a oferecer esse serviço pra comerciantes aqui perto. Hoje tenho 11 clientes fixos. Faço R$3.200 por mês só com isso, do meu quarto."</p>
+        <div class="depo-author">
+          <div class="depo-avatar">GM</div>
+          <div>
+            <div class="depo-name">Gabriel M.</div>
+            <div class="depo-role">18 anos, Belo Horizonte</div>
+          </div>
+        </div>
+      </div>
+      <div class="depo-card">
+        <div class="depo-stars">★★★★★</div>
+        <p>"Sou péssima com tecnologia, não entendo nada de design. Com o Provenda funciona mesmo assim. Meu cardápio sai lindo todo dia antes das 6h."</p>
+        <div class="depo-author">
+          <div class="depo-avatar">RF</div>
+          <div>
+            <div class="depo-name">Rosana F.</div>
+            <div class="depo-role">Marmiteira, Goiânia</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ GARANTIA ═══ -->
+<section class="garantia z">
+  <div class="container">
+    <span class="section-tag fade-up">Sem risco nenhum</span>
+    <div class="reveal-wrap">
+      <h2 class="section-title reveal-inner">Você não tem<br>nada a perder</h2>
+    </div>
+    <div class="garantia-box fade-up">
+      <div class="garantia-shield">🛡️</div>
+      <h3>Garantia Incondicional de 7 Dias</h3>
+      <p>
+        Acesse tudo, aplique o protocolo, veja o resultado.<br>
+        Se em 7 dias você não ficar satisfeito por qualquer motivo — ou sem motivo nenhum — devolvemos 100% do seu dinheiro.<br><br>
+        Sem burocracia. Sem perguntas. Sem enrolação.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ OFERTA ═══ -->
+<section class="oferta z" id="oferta">
+  <div class="container">
+    <span class="section-tag fade-up">Oferta de lançamento</span>
+    <div class="reveal-wrap">
+      <h2 class="section-title reveal-inner">Acesse o Provenda<br>pelo menor preço</h2>
+    </div>
+    <div style="height:40px"></div>
+    <div class="oferta-box fade-up">
+      <p class="preco-de">De R$ 197,00</p>
+      <p class="preco-por"><sup>R$</sup>47</p>
+      <p class="preco-sub">Pagamento único · Acesso vitalício · Sem mensalidade</p>
+      <a href="#" class="oferta-cta">Quero o Provenda por R$47</a>
+      <p class="oferta-seguro">🔒 Pagamento 100% seguro · Garantia 7 dias · Acesso imediato</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FAQ ═══ -->
+<section class="faq z">
+  <div class="container">
+    <span class="section-tag fade-up">Dúvidas frequentes</span>
+    <div class="reveal-wrap">
+      <h2 class="section-title reveal-inner">Respondendo o que<br>você está pensando</h2>
+    </div>
+    <div class="divider fade-up"></div>
+    <div class="faq-list fade-up">
+      <div class="faq-item">
+        <div class="faq-q">Precisa saber usar IA ou ter alguma habilidade?<i class="arrow">+</i></div>
+        <div class="faq-body"><p>Zero. Se você sabe digitar uma mensagem no WhatsApp, você consegue aplicar o Provenda. O protocolo é feito pra qualquer pessoa, de qualquer idade.</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Vai ter custo mensal de ferramenta?<i class="arrow">+</i></div>
+        <div class="faq-body"><p>Não. O Provenda foi desenvolvido para funcionar com ferramentas de IA 100% gratuitas. Você paga uma vez pelo método e usa pra sempre.</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Funciona pra qualquer segmento de produto?<i class="arrow">+</i></div>
+        <div class="faq-body"><p>Sim. Moda, alimentação, beleza, serviços, revenda de qualquer categoria. O método inclui variações de prompt específicas pra cada tipo de negócio.</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Já vi produtos parecidos. Por que o Provenda é diferente?<i class="arrow">+</i></div>
+        <div class="faq-body"><p>O que você viu antes provavelmente entrega um template genérico. O Provenda é um protocolo — uma sequência estratégica de prompts que qualquer pessoa aplica em qualquer IA gratuita, sem depender de plataforma, sem mensalidade, sem limitação.</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Quando recebo o acesso?<i class="arrow">+</i></div>
+        <div class="faq-body"><p>Imediatamente após a confirmação do pagamento, um email é enviado com todos os acessos. Você já pode aplicar o primeiro protocolo hoje.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="z">
+  <p><strong>PROVENDA™</strong> — Protocolo Status Vendedor</p>
+  <p style="margin-top:8px">© 2025 · Todos os direitos reservados · <a href="#" style="color:var(--muted);text-decoration:none">Termos de Uso</a> · <a href="#" style="color:var(--muted);text-decoration:none">Política de Privacidade</a></p>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
