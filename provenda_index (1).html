@@ -1,0 +1,1647 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>PROVENDA — Sua Gráfica de Bolso com IA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/TextPlugin.min.js"></script>
+    <style>
+        :root {
+            --bg: #000;
+            --s1: #0a0a0a;
+            --s2: #111;
+            --amber: #F5A623;
+            --amber2: #ffc246;
+            --amber3: #ffaa00;
+            --glow: rgba(245,166,35,0.2);
+            --glow2: rgba(245,166,35,0.4);
+            --white: #fff;
+            --muted: #777;
+            --border: rgba(255,255,255,0.08);
+            --border-a: rgba(245,166,35,0.3);
+            --font: 'Inter', sans-serif;
+            --head: 'Syne', sans-serif;
+            --r: 4px;
+            --clip-btn: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+            --clip-badge: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+        }
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }
+        html { scroll-behavior:smooth; }
+        body {
+            background:var(--bg); color:var(--white);
+            font-family:var(--font); overflow-x:hidden; line-height:1.65;
+        }
+
+        /* UTILS */
+        .c { width:100%; max-width:1080px; margin:0 auto; padding:0 20px; }
+        @media(min-width:768px) { .c { padding:0 40px; } }
+        .amber { color:var(--amber); }
+        .sec { padding:90px 0; }
+        @media(min-width:768px) { .sec { padding:140px 0; } }
+        .sec-tag { display:inline-block; font-size:10px; letter-spacing:4px; text-transform:uppercase; color:var(--amber); margin-bottom:14px; }
+        .sec-title { font-family:var(--head); font-size:clamp(26px,5vw,54px); line-height:1.05; letter-spacing:-0.02em; margin-bottom:18px; }
+        .sec-sub { font-size:clamp(14px,1.8vw,18px); color:var(--muted); font-weight:300; max-width:560px; }
+
+        /* PRELOADER */
+        #pre {
+            position:fixed; inset:0; z-index:9999; background:#000;
+            display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px;
+        }
+        .pre-word {
+            font-family:var(--head); font-size:clamp(26px,8vw,52px);
+            letter-spacing:14px; color:var(--amber);
+            animation: preGlow 1.6s ease infinite alternate;
+        }
+        @keyframes preGlow {
+            from { text-shadow: 0 0 20px rgba(245,166,35,0.3); }
+            to   { text-shadow: 0 0 50px rgba(245,166,35,0.9), 0 0 100px rgba(245,166,35,0.3); }
+        }
+        .pre-track { width:100px; height:2px; background:var(--border); overflow:hidden; }
+        .pre-fill { height:100%; width:0; background:var(--amber); animation:fill 1.6s ease forwards; }
+        @keyframes fill { to { width:100%; } }
+
+        /* ============================================================
+           URGENCY BAR
+           ============================================================ */
+        #urgency-bar {
+            position:fixed; top:0; left:0; width:100%; z-index:600;
+            background:linear-gradient(90deg, #1a0d00, #2a1500, #1a0d00);
+            padding:8px 20px; text-align:center;
+            border-bottom:1px solid rgba(245,166,35,0.2);
+            transform:translateY(0);
+            transition:transform 0.3s;
+        }
+        .ub-inner {
+            display:flex; align-items:center; justify-content:center; gap:12px;
+            flex-wrap:wrap;
+        }
+        .ub-dot {
+            width:7px; height:7px; border-radius:50%; background:var(--amber);
+            animation:pulse-dot 1.4s ease infinite;
+            flex-shrink:0;
+        }
+        @keyframes pulse-dot {
+            0%,100% { opacity:1; transform:scale(1); box-shadow:0 0 0 0 rgba(245,166,35,0.5); }
+            50% { opacity:0.6; transform:scale(0.8); box-shadow:0 0 0 6px rgba(245,166,35,0); }
+        }
+        .ub-text {
+            font-size:11px; letter-spacing:1.5px; color:#ddd; font-weight:500;
+        }
+        .ub-text strong { color:var(--amber); }
+        .ub-timer {
+            font-family:var(--head); font-size:13px; color:var(--amber);
+            letter-spacing:2px; font-weight:800;
+            background:rgba(245,166,35,0.1); border:1px solid var(--border-a);
+            padding:2px 10px; border-radius:3px;
+        }
+
+        /* CANVASES */
+        #bgc { position:fixed; top:0; left:0; width:100%; height:100%; z-index:-1; pointer-events:none; opacity:0.6; }
+        #cfc { position:fixed; inset:0; z-index:900; pointer-events:none; }
+
+        /* NAV */
+        nav {
+            position:fixed; top:35px; width:100%; z-index:500; padding:14px 0;
+            background:rgba(0,0,0,0.88); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
+            border-bottom:1px solid var(--border);
+            transition:top 0.3s;
+        }
+        nav.no-bar { top:0; }
+        .nav-in { display:flex; justify-content:space-between; align-items:center; }
+        .logo { font-family:var(--head); font-size:19px; font-weight:800; letter-spacing:3px; color:var(--amber); text-decoration:none; }
+        .logo-dot { display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--amber); margin-left:2px; margin-bottom:6px; animation:pulse-dot 1.4s ease infinite; }
+
+        /* ============================================================
+           CLIP-PATH BUTTON SYSTEM
+           ============================================================ */
+        .nav-btn {
+            padding:10px 22px;
+            background:var(--amber); color:#000;
+            font-family:var(--head); font-size:11px; font-weight:800; letter-spacing:1.5px;
+            text-decoration:none; border:none; cursor:pointer;
+            clip-path:var(--clip-btn);
+            transition:all 0.25s;
+            white-space:nowrap;
+            position:relative; overflow:hidden;
+        }
+        .nav-btn::after {
+            content:''; position:absolute; inset:0;
+            background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent);
+            transform:translateX(-100%); transition:transform 0.5s;
+        }
+        .nav-btn:hover { background:var(--amber2); transform:translateY(-2px); box-shadow:0 8px 32px var(--glow2); }
+        .nav-btn:hover::after { transform:translateX(100%); }
+
+        .btn {
+            display:inline-flex; align-items:center; justify-content:center; gap:8px;
+            padding:17px 38px;
+            background:var(--amber); color:#000;
+            font-family:var(--head); font-weight:800; font-size:13px;
+            text-transform:uppercase; letter-spacing:1px;
+            text-decoration:none; border:none; cursor:pointer;
+            clip-path:var(--clip-btn);
+            transition:all 0.3s;
+            position:relative; overflow:hidden;
+            -webkit-appearance:none;
+        }
+        .btn::after {
+            content:''; position:absolute; inset:0;
+            background:linear-gradient(90deg,transparent,rgba(255,255,255,0.22),transparent);
+            transform:translateX(-100%); transition:transform 0.55s;
+        }
+        .btn:hover { background:var(--amber2); transform:translateY(-3px); box-shadow:0 20px 60px var(--glow2); }
+        .btn:hover::after { transform:translateX(100%); }
+        .btn:active { transform:translateY(-1px); }
+        .btn-full { width:100%; padding:20px; font-size:14px; }
+        .btn-note { font-size:11px; color:var(--muted); }
+
+        /* ============================================================
+           HERO
+           ============================================================ */
+        .hero {
+            min-height:100svh; display:flex; flex-direction:column; justify-content:center;
+            padding-top:120px; padding-bottom:60px;
+        }
+        .badge {
+            display:inline-flex; align-items:center; gap:8px;
+            padding:7px 16px;
+            border:1px solid var(--amber); color:var(--amber);
+            font-size:10px; letter-spacing:3px; text-transform:uppercase;
+            clip-path:var(--clip-badge);
+            margin-bottom:28px; width:fit-content;
+            position:relative;
+        }
+        .badge::before {
+            content:''; position:absolute; inset:0;
+            background:rgba(245,166,35,0.06);
+        }
+
+        .hero h1 {
+            font-family:var(--head);
+            font-size:clamp(36px,9vw,96px);
+            line-height:0.95; letter-spacing:-0.03em; margin-bottom:24px;
+            overflow:hidden;
+        }
+        /* SplitType chars will be inserted by JS */
+        .hero h1 .char { display:inline-block; transform-origin:50% 100%; }
+
+        .hero-sub { font-size:clamp(14px,2.2vw,19px); color:var(--muted); max-width:580px; font-weight:300; line-height:1.65; margin-bottom:12px; }
+        .hero-reforco { font-size:clamp(13px,1.6vw,17px); color:var(--amber); font-weight:500; margin-bottom:32px; }
+        .chips { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:40px; }
+        .chip {
+            display:inline-flex; align-items:center; gap:6px; padding:6px 14px;
+            background:rgba(245,166,35,0.07); border:1px solid var(--border-a);
+            border-radius:100px; font-size:12px; color:#ccc;
+            transition:all 0.2s;
+        }
+        .chip:hover { background:rgba(245,166,35,0.15); border-color:var(--amber); color:#fff; }
+        .chip::before { content:'✓'; color:var(--amber); font-size:10px; font-weight:700; }
+        .hero-cta { display:flex; flex-direction:column; align-items:flex-start; gap:10px; }
+
+        /* ============================================================
+           SAVINGS BADGE — pulsante
+           ============================================================ */
+        .savings-badge {
+            display:inline-flex; align-items:center; gap:8px;
+            padding:8px 18px;
+            background:rgba(245,166,35,0.12);
+            border:1px solid var(--amber);
+            clip-path:var(--clip-badge);
+            font-size:11px; letter-spacing:1px; color:var(--amber);
+            font-family:var(--head); font-weight:800;
+            animation:badge-pulse 2.5s ease infinite;
+            position:relative; overflow:hidden;
+        }
+        .savings-badge::before {
+            content:''; position:absolute; inset:0;
+            background:linear-gradient(90deg, transparent, rgba(245,166,35,0.2), transparent);
+            animation:shimmer 2s ease infinite;
+        }
+        @keyframes badge-pulse {
+            0%,100% { box-shadow:0 0 0 0 rgba(245,166,35,0.4); }
+            50% { box-shadow:0 0 0 8px rgba(245,166,35,0); }
+        }
+        @keyframes shimmer {
+            0% { transform:translateX(-100%); }
+            100% { transform:translateX(200%); }
+        }
+
+        /* ============================================================
+           INFINITE TICKER
+           ============================================================ */
+        .ticker-wrap {
+            overflow:hidden; padding:14px 0;
+            background:rgba(245,166,35,0.06);
+            border-top:1px solid var(--border-a);
+            border-bottom:1px solid var(--border-a);
+            position:relative; margin:60px 0;
+        }
+        .ticker-wrap::before, .ticker-wrap::after {
+            content:''; position:absolute; top:0; width:80px; height:100%; z-index:2;
+        }
+        .ticker-wrap::before { left:0; background:linear-gradient(90deg, #000, transparent); }
+        .ticker-wrap::after { right:0; background:linear-gradient(-90deg, #000, transparent); }
+        .ticker-track {
+            display:flex; gap:0; width:max-content;
+            animation:ticker 28s linear infinite;
+            will-change:transform;
+        }
+        .ticker-track:hover { animation-play-state:paused; }
+        @keyframes ticker { from { transform:translateX(0); } to { transform:translateX(-50%); } }
+        .ticker-item {
+            display:inline-flex; align-items:center; gap:12px;
+            padding:0 28px; white-space:nowrap;
+            font-size:11px; letter-spacing:2.5px; text-transform:uppercase;
+            color:#888; font-weight:500;
+        }
+        .ticker-item .ti-dot {
+            width:4px; height:4px; border-radius:50%; background:var(--amber); flex-shrink:0;
+        }
+        .ticker-item.highlight { color:var(--amber); font-weight:700; }
+
+        /* ============================================================
+           GLOW CARD
+           ============================================================ */
+        .glow-card {
+            position:relative; border-radius:var(--r);
+            background:var(--s1);
+            transition:transform 0.3s, box-shadow 0.3s;
+        }
+        .glow-card::before {
+            content:''; position:absolute; inset:-1px;
+            background:linear-gradient(135deg, var(--amber), transparent 50%, transparent 70%, var(--amber));
+            border-radius:calc(var(--r) + 1px); opacity:0;
+            transition:opacity 0.4s; z-index:-1;
+        }
+        .glow-card:hover::before { opacity:0.6; }
+        .glow-card:hover { transform:translateY(-4px); box-shadow:0 24px 64px rgba(245,166,35,0.15); }
+
+        /* ============================================================
+           DOBRA 2 — ID
+           ============================================================ */
+        .id-grid { display:grid; grid-template-columns:1fr; gap:2px; background:var(--border); margin-top:52px; }
+        @media(min-width:600px) { .id-grid { grid-template-columns:1fr 1fr; } }
+        .id-card { background:#000; padding:44px 32px; transition:background 0.3s; }
+        .id-card:hover { background:#0d0d0d; }
+        .id-tag { font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--amber); display:block; margin-bottom:18px; }
+        .id-card h3 { font-family:var(--head); font-size:clamp(19px,2.8vw,24px); margin-bottom:22px; line-height:1.2; }
+        .id-list { list-style:none; }
+        .id-list li { padding:11px 0; border-bottom:1px solid var(--border); color:var(--muted); font-size:14px; display:flex; gap:10px; align-items:flex-start; }
+        .id-list li:last-child { border-bottom:none; }
+        .id-list li::before { content:'→'; color:var(--amber); flex-shrink:0; margin-top:2px; }
+        .id-footer { margin-top:44px; padding:36px 28px; border:1px solid var(--border-a); background:rgba(245,166,35,0.04); text-align:center; border-radius:var(--r); }
+        .id-footer p { font-family:var(--head); font-size:clamp(16px,2.5vw,25px); line-height:1.35; }
+        @media(min-width:768px) { .id-footer { padding:50px; } }
+
+        /* ============================================================
+           DOBRA 3 — DESCOBERTA
+           ============================================================ */
+        .disc { padding:110px 0; background:radial-gradient(ellipse at 50% -10%, rgba(245,166,35,0.07) 0%, transparent 65%); text-align:center; }
+        .disc-body { font-size:clamp(14px,1.9vw,18px); color:var(--muted); font-weight:300; line-height:1.8; max-width:540px; margin:0 auto 52px; }
+        .flow { display:flex; flex-direction:column; align-items:center; max-width:680px; margin:0 auto; }
+        @media(min-width:600px) { .flow { flex-direction:row; } }
+        .flow-box {
+            flex:1; padding:22px 18px;
+            background:var(--s2); border:1px solid var(--border); text-align:center;
+            position:relative; overflow:hidden; transition:border-color 0.3s;
+        }
+        .flow-box:hover { border-color:var(--amber); }
+        .flow-box::after {
+            content:''; position:absolute; inset:0;
+            background:linear-gradient(135deg, rgba(245,166,35,0.05), transparent);
+            opacity:0; transition:opacity 0.3s;
+        }
+        .flow-box:hover::after { opacity:1; }
+        .flow-box b { display:block; font-family:var(--head); font-size:10px; letter-spacing:2px; color:var(--amber); margin-bottom:7px; }
+        .flow-box span { font-size:13px; color:#ccc; }
+        .flow-arr { color:var(--amber); font-size:20px; padding:10px 0; flex-shrink:0; }
+        @media(min-width:600px) { .flow-arr { padding:0 10px; } }
+
+        /* ============================================================
+           DOBRA 4 — MECANISMO
+           ============================================================ */
+        .mec-grid { display:grid; grid-template-columns:1fr; gap:2px; background:var(--border); margin:52px 0 44px; }
+        @media(min-width:600px) { .mec-grid { grid-template-columns:1fr 1fr; } }
+        .mec-card {
+            background:#000; padding:36px 28px; display:flex; gap:18px; align-items:flex-start;
+            transition:background 0.3s; position:relative; overflow:hidden;
+        }
+        .mec-card::after {
+            content:''; position:absolute; left:0; bottom:0; width:0; height:2px;
+            background:var(--amber); transition:width 0.4s ease;
+        }
+        .mec-card:hover { background:#0b0b0b; }
+        .mec-card:hover::after { width:100%; }
+        .mec-ic {
+            width:42px; height:42px; flex-shrink:0;
+            border:1px solid var(--border-a); background:rgba(245,166,35,0.07);
+            display:flex; align-items:center; justify-content:center;
+            color:var(--amber); font-size:18px; border-radius:var(--r);
+            transition:background 0.3s, box-shadow 0.3s;
+        }
+        .mec-card:hover .mec-ic { background:rgba(245,166,35,0.15); box-shadow:0 0 20px rgba(245,166,35,0.2); }
+        .mec-card h3 { font-family:var(--head); font-size:16px; margin-bottom:6px; }
+        .mec-card p { color:var(--muted); font-size:13px; line-height:1.6; }
+        .mec-cta { text-align:center; }
+        .mec-label { display:block; margin-bottom:16px; font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--amber); }
+
+        /* ============================================================
+           DOBRA 5 — STEPS
+           ============================================================ */
+        .step-row { display:flex; gap:28px; align-items:center; padding:44px 0; border-bottom:1px solid var(--border); opacity:0; transform:translateX(-28px); }
+        .step-row.revealed { opacity:1; transform:translateX(0); transition:opacity 0.6s ease, transform 0.6s ease; }
+        .step-row:first-of-type { border-top:1px solid var(--border); }
+        .step-n {
+            font-family:var(--head); font-size:clamp(40px,8vw,76px); line-height:1;
+            min-width:64px; text-align:center; color:var(--amber); opacity:0.08;
+            transition:opacity 0.4s, text-shadow 0.4s; flex-shrink:0;
+        }
+        @media(min-width:768px) { .step-n { min-width:96px; } }
+        .step-row:hover .step-n { opacity:1; text-shadow:0 0 40px rgba(245,166,35,0.5); }
+        .step-c h3 { font-family:var(--head); font-size:clamp(17px,2.5vw,22px); margin-bottom:7px; }
+        .step-c p { color:var(--muted); font-size:14px; margin-bottom:5px; }
+        .step-sub { color:var(--amber) !important; font-size:12px !important; font-style:italic; }
+
+        /* ============================================================
+           DOBRA 6 — APPS
+           ============================================================ */
+        .apps-s { background:#040404; }
+        .apps-grid { display:grid; grid-template-columns:1fr; gap:18px; margin:52px 0; }
+        @media(min-width:600px) { .apps-grid { grid-template-columns:1fr 1fr; } }
+        .app-card {
+            padding:36px 28px; border:1px solid var(--border); border-radius:var(--r);
+            transition:border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+            position:relative; overflow:hidden;
+        }
+        .app-card::before {
+            content:''; position:absolute; top:0; left:0; right:0; height:1px;
+            background:linear-gradient(90deg, transparent, var(--amber), transparent);
+            opacity:0; transition:opacity 0.3s;
+        }
+        .app-card:hover { border-color:var(--amber); transform:translateY(-4px); box-shadow:0 20px 60px rgba(245,166,35,0.12); }
+        .app-card:hover::before { opacity:1; }
+        .app-em { font-size:26px; margin-bottom:18px; display:block; }
+        .app-card h3 { font-family:var(--head); font-size:19px; color:var(--amber); margin-bottom:18px; }
+        .app-tags { display:flex; flex-wrap:wrap; gap:7px; }
+        .app-tag { padding:5px 12px; border:1px solid var(--border); font-size:11px; color:var(--muted); border-radius:100px; transition:all 0.2s; }
+        .app-tag:hover { border-color:var(--border-a); color:#ccc; }
+        .apps-cta { padding:44px 28px; text-align:center; border:1px solid var(--border-a); background:rgba(245,166,35,0.03); border-radius:var(--r); }
+        .apps-cta p { font-family:var(--head); font-size:clamp(16px,2.5vw,26px); line-height:1.4; }
+        @media(min-width:768px) { .apps-cta { padding:56px; } }
+
+        /* ============================================================
+           DEPOIMENTOS
+           ============================================================ */
+        .testo-s { overflow:hidden; padding:100px 0; }
+        .testo-track { display:flex; gap:18px; width:max-content; padding:4px 20px; will-change:transform; }
+        .testo-card {
+            width:min(320px,80vw); flex-shrink:0;
+            padding:28px; background:var(--s2); border:1px solid var(--border); border-radius:var(--r);
+            transition:border-color 0.3s, transform 0.3s;
+        }
+        .testo-card:hover { border-color:var(--border-a); transform:translateY(-3px); }
+        .testo-lbl { font-size:10px; letter-spacing:2px; color:var(--amber); text-transform:uppercase; display:block; margin-bottom:14px; }
+        .stars { color:var(--amber); font-size:12px; letter-spacing:2px; margin-bottom:12px; }
+        .testo-q { font-style:italic; font-size:14px; color:#ddd; line-height:1.65; margin-bottom:22px; }
+        .testo-auth { display:flex; align-items:center; gap:11px; padding-top:18px; border-top:1px solid var(--border); }
+        .avatar { width:36px; height:36px; background:var(--amber); display:flex; align-items:center; justify-content:center; font-family:var(--head); font-size:11px; font-weight:800; color:#000; flex-shrink:0; border-radius:50%; }
+        .testo-auth strong { font-size:13px; display:block; }
+        .testo-auth small { color:var(--muted); font-size:11px; }
+
+        /* ============================================================
+           GARANTIA
+           ============================================================ */
+        .gar-box {
+            display:flex; flex-direction:column; gap:24px; align-items:flex-start;
+            padding:44px 28px; border:1px solid var(--border); border-radius:var(--r);
+            position:relative; overflow:hidden;
+        }
+        .gar-box::before {
+            content:''; position:absolute; inset:-1px;
+            background:linear-gradient(135deg, rgba(245,166,35,0.2), transparent, rgba(245,166,35,0.1));
+            border-radius:calc(var(--r) + 1px); pointer-events:none;
+        }
+        @media(min-width:768px) { .gar-box { flex-direction:row; gap:44px; padding:60px; align-items:center; } }
+        .gar-ic { color:var(--amber); flex-shrink:0; font-size:56px; line-height:1; filter:drop-shadow(0 0 20px rgba(245,166,35,0.4)); }
+        .gar-box h2 { font-family:var(--head); font-size:clamp(20px,3vw,28px); margin-bottom:10px; }
+        .gar-box p { color:var(--muted); font-size:14px; line-height:1.8; max-width:500px; }
+
+        /* ============================================================
+           OFERTA
+           ============================================================ */
+        .offer-s { padding:100px 0; }
+        .offer-card {
+            max-width:620px; margin:0 auto; padding:52px 28px 44px;
+            text-align:center; border:1px solid var(--border-a);
+            background:var(--s1); border-radius:8px; position:relative;
+        }
+        /* Glow animado no card da oferta */
+        .offer-card::before {
+            content:''; position:absolute; inset:-1px;
+            background:linear-gradient(135deg, rgba(245,166,35,0.4), transparent 40%, transparent 60%, rgba(245,166,35,0.2));
+            border-radius:9px; z-index:-1;
+            animation:card-glow 3s ease infinite alternate;
+        }
+        @keyframes card-glow {
+            from { opacity:0.5; }
+            to   { opacity:1; box-shadow:0 0 60px rgba(245,166,35,0.1); }
+        }
+        @media(min-width:480px) { .offer-card { padding:68px 52px 52px; } }
+        .offer-badge {
+            position:absolute; top:-14px; left:50%; transform:translateX(-50%);
+            background:var(--amber); color:#000; padding:5px 22px;
+            font-family:var(--head); font-size:10px; letter-spacing:2px;
+            white-space:nowrap; clip-path:var(--clip-badge); font-weight:800;
+            animation:badge-pulse 2.5s ease infinite;
+        }
+        .offer-ey { font-size:10px; letter-spacing:4px; opacity:0.4; text-transform:uppercase; display:block; margin-bottom:8px; }
+        .offer-hl { font-family:var(--head); font-size:clamp(17px,3vw,24px); line-height:1.3; margin-bottom:36px; }
+
+        /* ENTREGÁVEIS */
+        .entregaveis-title { font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--amber); margin-bottom:20px; display:block; }
+        .entregavel-item {
+            display:flex; align-items:flex-start; justify-content:space-between;
+            gap:12px; padding:18px 20px; background:#0d0d0d;
+            border:1px solid var(--border); border-radius:var(--r);
+            margin-bottom:10px; text-align:left; position:relative; overflow:hidden;
+            transition:border-color 0.3s;
+        }
+        .entregavel-item:hover { border-color:var(--border-a); }
+        /* Shimmer nos entregáveis */
+        .entregavel-item::after {
+            content:''; position:absolute; top:0; left:-100%; width:60%; height:100%;
+            background:linear-gradient(90deg, transparent, rgba(245,166,35,0.04), transparent);
+            animation:item-shimmer 4s ease infinite;
+        }
+        @keyframes item-shimmer {
+            0% { left:-100%; }
+            50%, 100% { left:200%; }
+        }
+        .entregavel-item:last-of-type { margin-bottom:0; }
+        .entregavel-num { font-family:var(--head); font-size:11px; color:var(--amber); opacity:0.5; min-width:20px; margin-top:2px; flex-shrink:0; }
+        .entregavel-info { flex:1; }
+        .entregavel-info strong { font-family:var(--head); font-size:14px; display:block; margin-bottom:4px; }
+        .entregavel-info span { font-size:12px; color:var(--muted); line-height:1.5; }
+        .entregavel-price { font-family:var(--head); font-size:14px; color:#e53e3e; text-decoration:line-through; text-decoration-color:#e53e3e; text-decoration-thickness:2px; white-space:nowrap; flex-shrink:0; opacity:0.85; }
+
+        /* TOTAL RISCADO */
+        .total-row { display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border:1px solid rgba(229,62,62,0.2); background:rgba(229,62,62,0.04); border-radius:var(--r); margin:12px 0 8px; }
+        .total-label { font-size:12px; color:var(--muted); font-weight:500; }
+        .total-value { font-family:var(--head); font-size:18px; color:#e53e3e; text-decoration:line-through; text-decoration-color:#e53e3e; text-decoration-thickness:2px; opacity:0.85; }
+
+        /* PREÇO */
+        .offer-arrow { font-size:26px; margin:18px 0 10px; display:block; }
+        .offer-today { font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--amber); display:block; margin-bottom:6px; }
+        .price { font-family:var(--head); color:var(--amber); font-size:clamp(76px,18vw,128px); line-height:1; margin-bottom:4px; text-shadow:0 0 40px rgba(245,166,35,0.3); }
+        .price sup { font-size:0.3em; vertical-align:top; margin-top:0.35em; display:inline-block; }
+        .price-note { color:var(--muted); font-size:13px; margin-bottom:8px; }
+        .price-reforco { font-size:14px; font-weight:500; line-height:1.55; margin-bottom:32px; }
+
+        .offer-list { list-style:none; border:1px solid var(--border); border-radius:var(--r); margin-bottom:28px; overflow:hidden; }
+        .offer-list li { display:flex; align-items:center; gap:9px; justify-content:center; padding:11px 18px; border-bottom:1px solid var(--border); font-size:13px; color:var(--muted); }
+        .offer-list li:last-child { border-bottom:none; }
+        .offer-list li::before { content:'✓'; color:var(--amber); font-weight:700; flex-shrink:0; }
+        .sec-row { margin-top:18px; display:flex; justify-content:center; flex-wrap:wrap; gap:12px; font-size:11px; color:var(--muted); opacity:0.65; }
+
+        /* ============================================================
+           COUNTER STRIP
+           ============================================================ */
+        .counter-strip {
+            display:grid; grid-template-columns:repeat(3, 1fr);
+            gap:2px; background:var(--border); margin:60px 0;
+            border:1px solid var(--border);
+        }
+        .counter-item {
+            padding:30px 20px; text-align:center; background:#000;
+            position:relative; overflow:hidden;
+        }
+        .counter-item::after {
+            content:''; position:absolute; bottom:0; left:0; width:100%; height:2px;
+            background:linear-gradient(90deg, transparent, var(--amber), transparent);
+            opacity:0; transition:opacity 0.3s;
+        }
+        .counter-item:hover::after { opacity:1; }
+        .counter-num {
+            font-family:var(--head); font-size:clamp(28px,6vw,48px);
+            color:var(--amber); line-height:1; display:block; margin-bottom:6px;
+        }
+        .counter-lbl { font-size:11px; letter-spacing:2px; color:var(--muted); text-transform:uppercase; }
+
+        /* ============================================================
+           FOOTER
+           ============================================================ */
+        footer { padding:56px 0 36px; border-top:1px solid var(--border); text-align:center; }
+        .foot-logo { font-family:var(--head); font-size:28px; letter-spacing:6px; color:var(--amber); opacity:0.14; margin-bottom:12px; }
+        footer p { color:var(--muted); font-size:12px; }
+
+        /* ============================================================
+           MODAL
+           ============================================================ */
+        .overlay {
+            position:fixed; inset:0; z-index:800;
+            background:rgba(0,0,0,0.92); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+            display:flex; align-items:center; justify-content:center; padding:16px;
+            opacity:0; pointer-events:none; transition:opacity 0.3s;
+        }
+        .overlay.open { opacity:1; pointer-events:all; }
+        .modal {
+            background:var(--s1); border:1px solid var(--border-a);
+            border-radius:10px; width:100%; max-width:460px;
+            max-height:92svh; overflow-y:auto; padding:36px 24px;
+            position:relative;
+            transform:translateY(28px) scale(0.97);
+            transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        @media(min-width:480px) { .modal { padding:44px 40px; } }
+        .overlay.open .modal { transform:translateY(0) scale(1); }
+        .m-close { position:absolute; top:14px; right:14px; background:none; border:none; cursor:pointer; color:var(--muted); font-size:20px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; transition:color 0.2s; border-radius:50%; }
+        .m-close:hover { color:#fff; background:rgba(255,255,255,0.05); }
+        .m-head { text-align:center; margin-bottom:28px; }
+        .m-title { font-family:var(--head); font-size:20px; margin-bottom:4px; }
+        .m-sub { color:var(--muted); font-size:13px; }
+        .m-price-row { display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:24px; padding:14px; background:rgba(245,166,35,0.07); border:1px solid var(--border-a); border-radius:var(--r); }
+        .m-price { font-family:var(--head); font-size:40px; color:var(--amber); line-height:1; }
+        .m-price-lbl { font-size:12px; color:var(--muted); text-align:left; }
+        .m-price-lbl b { display:block; color:#fff; margin-bottom:2px; }
+        .pay-tog { display:flex; gap:8px; margin-bottom:20px; }
+        .pay-opt { flex:1; padding:11px 8px; border:1px solid var(--border); background:none; color:var(--muted); font-family:var(--font); font-size:13px; cursor:pointer; border-radius:var(--r); transition:all 0.25s; }
+        .pay-opt.active { border-color:var(--amber); color:var(--amber); background:rgba(245,166,35,0.07); }
+        .fg { margin-bottom:16px; }
+        .fl { display:block; font-size:11px; font-weight:600; letter-spacing:0.5px; margin-bottom:7px; color:#bbb; }
+        .fi { width:100%; padding:13px 15px; background:#0f0f0f; border:1px solid var(--border); color:#fff; font-family:var(--font); font-size:15px; border-radius:var(--r); transition:border-color 0.25s, box-shadow 0.25s; -webkit-appearance:none; }
+        .fi:focus { outline:none; border-color:var(--amber); box-shadow:0 0 0 3px rgba(245,166,35,0.1); }
+        .fi::placeholder { color:#3a3a3a; }
+        .fi.err { border-color:#e53e3e; animation:shake 0.3s ease; }
+        @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+        .card-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .iw { position:relative; }
+        .cb { position:absolute; right:13px; top:50%; transform:translateY(-50%); font-size:17px; pointer-events:none; }
+        .pix-s { text-align:center; }
+        .pix-key { font-size:13px; color:var(--muted); margin-bottom:4px; }
+        .pix-qr { width:160px; height:160px; margin:14px auto; background:#fff; border-radius:8px; padding:10px; display:flex; align-items:center; justify-content:center; }
+        .pix-qr svg { width:100%; height:100%; }
+        .pix-copy { padding:9px 22px; background:none; border:1px solid var(--border-a); color:var(--amber); font-family:var(--font); font-size:13px; cursor:pointer; border-radius:var(--r); transition:all 0.25s; }
+        .pix-copy:hover { background:rgba(245,166,35,0.1); }
+        .pix-info { font-size:12px; color:var(--muted); margin-top:14px; line-height:1.6; }
+        .sub-btn { width:100%; padding:17px; margin-top:6px; background:var(--amber); color:#000; font-family:var(--head); font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:1px; border:none; cursor:pointer; clip-path:var(--clip-btn); transition:all 0.25s; position:relative; overflow:hidden; }
+        .sub-btn:hover { background:var(--amber2); transform:translateY(-2px); box-shadow:0 10px 30px var(--glow); }
+        .sub-btn:disabled { opacity:0.55; cursor:not-allowed; transform:none; }
+        .spin { display:none; width:16px; height:16px; border:2px solid rgba(0,0,0,0.25); border-top-color:#000; border-radius:50%; animation:sp 0.7s linear infinite; margin:0 auto; }
+        @keyframes sp { to { transform:rotate(360deg); } }
+        .m-success { display:none; text-align:center; padding:16px 0; }
+        .suc-ic { width:68px; height:68px; background:rgba(245,166,35,0.1); border:2px solid var(--amber); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 22px; font-size:30px; animation:badge-pulse 2s ease infinite; }
+        .suc-title { font-family:var(--head); font-size:24px; margin-bottom:10px; }
+        .suc-sub { color:var(--muted); font-size:14px; line-height:1.7; }
+
+        /* ============================================================
+           FLOATING CTA — Mobile
+           ============================================================ */
+        #float-cta {
+            position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(100px);
+            z-index:700; width:calc(100% - 40px); max-width:420px;
+            transition:transform 0.5s cubic-bezier(0.34,1.56,0.64,1);
+            pointer-events:none; opacity:0; transition:transform 0.5s, opacity 0.5s;
+        }
+        #float-cta.visible { transform:translateX(-50%) translateY(0); pointer-events:all; opacity:1; }
+        .float-btn {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:16px 24px; width:100%;
+            background:var(--amber); color:#000;
+            font-family:var(--head); font-weight:800; font-size:13px;
+            letter-spacing:0.5px; border:none; cursor:pointer;
+            clip-path:var(--clip-btn);
+            box-shadow:0 8px 40px rgba(245,166,35,0.5);
+            animation:float-pulse 3s ease infinite;
+        }
+        @keyframes float-pulse {
+            0%,100% { box-shadow:0 8px 40px rgba(245,166,35,0.5); }
+            50% { box-shadow:0 8px 60px rgba(245,166,35,0.8); }
+        }
+        .float-price { font-size:16px; }
+
+        /* REVEAL */
+        .rv { opacity:0; transform:translateY(36px); }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width:3px; }
+        ::-webkit-scrollbar-track { background:#000; }
+        ::-webkit-scrollbar-thumb { background:#222; border-radius:2px; }
+        ::-webkit-scrollbar-thumb:hover { background:var(--amber); }
+
+        /* MOBILE TWEAKS */
+        @media(max-width:480px) {
+            .hero h1 { letter-spacing:-0.02em; }
+            .hero-cta .btn { width:100%; text-align:center; }
+            .entregavel-item { flex-wrap:wrap; }
+            .entregavel-price { width:100%; text-align:right; }
+            .total-row { flex-wrap:wrap; gap:6px; }
+            .counter-strip { grid-template-columns:1fr 1fr; }
+            .counter-strip .counter-item:last-child { grid-column:1/-1; }
+            #urgency-bar .ub-text { font-size:10px; }
+        }
+
+        /* TOUCH — remove hover delays mobile */
+        @media(hover:none) {
+            .btn:hover, .nav-btn:hover { transform:none; }
+        }
+
+        /* CUSTOM CURSOR — desktop only */
+        @media(hover:hover) and (pointer:fine) {
+            body { cursor:none; }
+            #cursor {
+                width:12px; height:12px;
+                background:var(--amber); border-radius:50%;
+                position:fixed; pointer-events:none; z-index:9998;
+                transform:translate(-50%,-50%);
+                transition:width 0.2s, height 0.2s, opacity 0.2s;
+                mix-blend-mode:difference;
+            }
+            #cursor-ring {
+                width:36px; height:36px;
+                border:1px solid rgba(245,166,35,0.5); border-radius:50%;
+                position:fixed; pointer-events:none; z-index:9997;
+                transform:translate(-50%,-50%);
+                transition:transform 0.12s ease, width 0.2s, height 0.2s;
+            }
+            a:hover ~ #cursor, button:hover ~ #cursor { width:20px; height:20px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- CUSTOM CURSOR -->
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<!-- PRELOADER -->
+<div id="pre">
+    <div class="pre-word">PROVENDA</div>
+    <div class="pre-track"><div class="pre-fill"></div></div>
+</div>
+
+<!-- URGENCY BAR -->
+<div id="urgency-bar">
+    <div class="ub-inner">
+        <div class="ub-dot"></div>
+        <span class="ub-text">🔥 Oferta de lançamento expira em <strong>hoje</strong></span>
+        <span class="ub-timer" id="countdown">23:59:59</span>
+        <div class="ub-dot"></div>
+    </div>
+</div>
+
+<!-- CANVASES -->
+<canvas id="bgc"></canvas>
+<canvas id="cfc"></canvas>
+
+<!-- NAV -->
+<nav id="mainNav">
+    <div class="c nav-in">
+        <a href="#" class="logo">PROVENDA<span class="logo-dot"></span></a>
+        <button class="nav-btn" onclick="openCO()">Quero Acesso →</button>
+    </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+    <div class="c">
+        <div class="badge">Protocolo de IA para Criadores e Empreendedores</div>
+        <h1 id="heroH1">CRIE MATERIAIS<br>DE VENDA<br><span class="amber">PROFISSIONAIS</span><br>EM MINUTOS.</h1>
+        <p class="hero-sub" style="opacity:0;transform:translateY(20px)">Use um funcionário de IA para gerar cardápios, catálogos e ofertas prontas — para vender no seu negócio ou para lucrar prestando serviço.</p>
+        <p class="hero-reforco" style="opacity:0;transform:translateY(20px)">Sua gráfica de bolso com IA — venda mais ou transforme isso em renda</p>
+        <div class="chips" style="opacity:0;transform:translateY(20px)">
+            <span class="chip">Para seu negócio ou para clientes</span>
+            <span class="chip">Sem Canva • Sem designer</span>
+            <span class="chip">Pronto em minutos</span>
+            <span class="chip">IA Gratuita • No Celular</span>
+        </div>
+        <div class="hero-cta" style="opacity:0;transform:translateY(20px)">
+            <button class="btn" onclick="openCO()">👉 QUERO ACESSO AO PROVENDA</button>
+            <div class="savings-badge">🔥 ECONOMIZE R$544 — HOJE</div>
+            <span class="btn-note">Acesso imediato • Pagamento único • Sem mensalidades</span>
+        </div>
+    </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker-wrap">
+    <div class="ticker-track" id="tickerTrack">
+        <!-- Items duplicated in JS -->
+    </div>
+</div>
+
+<!-- COUNTER STRIP -->
+<section style="padding:0 0 60px;">
+    <div class="c">
+        <div class="counter-strip rv">
+            <div class="counter-item">
+                <span class="counter-num" data-target="4800">0</span>
+                <span class="counter-lbl">Usuários Ativos</span>
+            </div>
+            <div class="counter-item">
+                <span class="counter-num" data-target="97" data-suffix="%">0</span>
+                <span class="counter-lbl">Satisfação</span>
+            </div>
+            <div class="counter-item">
+                <span class="counter-num" data-target="3" data-suffix="min">0</span>
+                <span class="counter-lbl">Primeiro Material</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- DOBRA 2 — ID -->
+<section class="sec">
+    <div class="c">
+        <div class="sec-tag">Para quem é?</div>
+        <h2 class="sec-title">Isso serve pra você que:</h2>
+        <div class="id-grid rv">
+            <div class="id-card">
+                <span class="id-tag">🔹 Tem um negócio</span>
+                <h3>Quer vender mais, mas perde tempo com design</h3>
+                <ul class="id-list">
+                    <li>Quer vender mais, mas perde tempo com design</li>
+                    <li>Sabe que seu produto é bom, mas não parece</li>
+                    <li>Precisa postar e atualizar rápido</li>
+                </ul>
+            </div>
+            <div class="id-card">
+                <span class="id-tag">💰 Ou quer ganhar dinheiro com isso</span>
+                <h3>Quer renda usando apenas o celular</h3>
+                <ul class="id-list">
+                    <li>Quer oferecer serviço simples e lucrativo</li>
+                    <li>Não sabe design, mas quer começar</li>
+                    <li>Quer renda usando apenas o celular</li>
+                </ul>
+            </div>
+        </div>
+        <div class="id-footer rv">
+            <p>Você não precisa aprender design.<br><span class="amber">Só precisa do processo certo.</span></p>
+        </div>
+    </div>
+</section>
+
+<!-- DOBRA 3 — DESCOBERTA -->
+<section class="disc">
+    <div class="c">
+        <div class="sec-tag">A Descoberta</div>
+        <h2 class="sec-title" style="margin-bottom:18px;">Um método que funciona para vender…<br>ou para lucrar criando para outros</h2>
+        <p class="disc-body">Não é template. Não é curso de Canva. É um <strong style="color:#fff;">Protocolo de Elite</strong>.<br>Você digita o que quer vender <em>(ou o que seu cliente vende)</em> e o Provenda transforma isso em material pronto.</p>
+        <div class="flow rv">
+            <div class="flow-box"><b>PASSO 1</b><span>Você digita o que será vendido</span></div>
+            <div class="flow-arr">→</div>
+            <div class="flow-box"><b>PASSO 2</b><span>O Protocolo Provenda age</span></div>
+            <div class="flow-arr">→</div>
+            <div class="flow-box"><b>RESULTADO</b><span>Material pronto para vender</span></div>
+        </div>
+    </div>
+</section>
+
+<!-- DOBRA 4 — MECANISMO -->
+<section class="sec">
+    <div class="c">
+        <div class="sec-tag">O Protocolo</div>
+        <h2 class="sec-title">O Protocolo Provenda</h2>
+        <p class="sec-sub">Um sistema simples que transforma qualquer produto ou serviço em material profissional em minutos.</p>
+        <div class="mec-grid rv">
+            <div class="mec-card">
+                <div class="mec-ic">🏪</div>
+                <div><h3>Para Seu Negócio</h3><p>Cardápios, catálogos, ofertas relâmpago. Pronto no celular em minutos.</p></div>
+            </div>
+            <div class="mec-card">
+                <div class="mec-ic">👥</div>
+                <div><h3>Para Clientes</h3><p>Gere materiais para restaurantes, salões, lojas. Cobre R$100–R$200 por trabalho simples.</p></div>
+            </div>
+            <div class="mec-card">
+                <div class="mec-ic">📈</div>
+                <div><h3>Freelance</h3><p>Monte portfólio rápido e comece a cobrar por criação de materiais profissionais.</p></div>
+            </div>
+            <div class="mec-card">
+                <div class="mec-ic">📱</div>
+                <div><h3>Renda Extra</h3><p>Uma habilidade simples que pode virar dinheiro rápido. Tudo pelo celular.</p></div>
+            </div>
+        </div>
+        <div class="mec-cta rv">
+            <span class="mec-label">Uma habilidade. Múltiplas fontes de renda.</span>
+            <button class="btn" onclick="openCO()">QUERO O PROVENDA AGORA</button>
+        </div>
+    </div>
+</section>
+
+<!-- DOBRA 5 — COMO FUNCIONA -->
+<section class="sec" style="padding-top:0;">
+    <div class="c">
+        <div class="sec-tag">Simples assim</div>
+        <h2 class="sec-title">Como funciona</h2>
+        <div class="steps-w">
+            <div class="step-row">
+                <div class="step-n">01</div>
+                <div class="step-c">
+                    <h3>Digite o que será vendido</h3>
+                    <p>Seu produto ou do cliente. Nome, preço, diferencial. Simples assim, direto no celular.</p>
+                    <p class="step-sub">Seu produto ou do cliente</p>
+                </div>
+            </div>
+            <div class="step-row">
+                <div class="step-n">02</div>
+                <div class="step-c">
+                    <h3>Use o Protocolo Provenda na IA</h3>
+                    <p>Um prompt estratégico que você aprende uma vez e usa pra sempre em IAs gratuitas.</p>
+                    <p class="step-sub">Na IA gratuita — sem pagar nada a mais</p>
+                </div>
+            </div>
+            <div class="step-row">
+                <div class="step-n">03</div>
+                <div class="step-c">
+                    <h3>Receba pronto para vender ou entregar</h3>
+                    <p>Visual profissional que gera desejo imediato. Poste ou entregue ao cliente e cobre.</p>
+                    <p class="step-sub">Para você postar ou entregar ao cliente</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- DOBRA 6 — APPS -->
+<section class="sec apps-s">
+    <div class="c">
+        <div class="sec-tag">Onde usar</div>
+        <h2 class="sec-title">Você pode usar o Provenda para:</h2>
+        <p class="sec-sub">Uma habilidade simples que pode virar dinheiro rápido</p>
+        <div class="apps-grid rv">
+            <div class="app-card">
+                <span class="app-em">💼</span>
+                <h3>Negócios</h3>
+                <div class="app-tags">
+                    <span class="app-tag">Restaurantes</span><span class="app-tag">Salões</span><span class="app-tag">Lojas</span><span class="app-tag">Adegas</span><span class="app-tag">Food trucks</span><span class="app-tag">Hamburguerias</span><span class="app-tag">Confeitarias</span><span class="app-tag">Boutiques</span>
+                </div>
+            </div>
+            <div class="app-card">
+                <span class="app-em">💰</span>
+                <h3>Renda</h3>
+                <div class="app-tags">
+                    <span class="app-tag">Criar cardápios para clientes</span><span class="app-tag">Montar catálogos</span><span class="app-tag">Gerenciar WhatsApp de negócios</span><span class="app-tag">Vender como serviço</span>
+                </div>
+            </div>
+        </div>
+        <div class="apps-cta rv">
+            <p><span class="amber">Venda mais com seu negócio</span><br>ou transforme isso em uma renda extra<br>usando apenas o celular</p>
+        </div>
+    </div>
+</section>
+
+<!-- DEPOIMENTOS -->
+<section class="testo-s">
+    <div class="c" style="margin-bottom:44px;">
+        <div class="sec-tag">Prova Social</div>
+        <h2 class="sec-title">Quem já usa não volta atrás.</h2>
+    </div>
+    <div class="testo-track" id="testoTrack">
+        <div class="testo-card"><span class="testo-lbl">🔹 Negócio próprio</span><div class="stars">★★★★★</div><p class="testo-q">"Eu passava 3 horas no Canva. Agora em 5 minutos o cardápio da semana tá pronto e as vendas triplicaram."</p><div class="testo-auth"><div class="avatar">RF</div><div><strong>Rosana F.</strong><small>Proprietária de lanchonete</small></div></div></div>
+        <div class="testo-card"><span class="testo-lbl">💰 Renda extra</span><div class="stars">★★★★★</div><p class="testo-q">"Tenho 11 clientes fixos. Faço R$3.200 por mês criando cardápios do meu quarto. Não sabia nada de design."</p><div class="testo-auth"><div class="avatar">GM</div><div><strong>Gabriel M.</strong><small>Freelancer</small></div></div></div>
+        <div class="testo-card"><span class="testo-lbl">🔹 Negócio próprio</span><div class="stars">★★★★★</div><p class="testo-q">"Sou péssima com tecnologia. Mas o Provenda é tão simples que meu cardápio sai lindo todo dia às 6h."</p><div class="testo-auth"><div class="avatar">JL</div><div><strong>Juliane L.</strong><small>Gastronomia</small></div></div></div>
+        <div class="testo-card"><span class="testo-lbl">💰 Renda extra</span><div class="stars">★★★★★</div><p class="testo-q">"Comecei num restaurante do bairro. Em 3 semanas já tinha 4 clientes pagando todo mês."</p><div class="testo-auth"><div class="avatar">AS</div><div><strong>André S.</strong><small>Revendedor de serviços</small></div></div></div>
+        <div class="testo-card"><span class="testo-lbl">🔹 Negócio próprio</span><div class="stars">★★★★★</div><p class="testo-q">"Visual de agência, preço de nada. Mudou completamente meu jogo no WhatsApp Status."</p><div class="testo-auth"><div class="avatar">MC</div><div><strong>Mariana C.</strong><small>Lojista</small></div></div></div>
+    </div>
+</section>
+
+<!-- GARANTIA -->
+<section class="sec" style="padding-top:0;">
+    <div class="c">
+        <div class="gar-box rv">
+            <div class="gar-ic">🛡️</div>
+            <div>
+                <h2>Risco Zero. Satisfação Total.</h2>
+                <p>Use o Provenda por 7 dias. Se não sentir que seu visual subiu de nível — ou se não criar seu primeiro material em minutos — devolvemos cada centavo. Sem burocracia, sem pergunta.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- OFERTA -->
+<section class="offer-s" id="oferta">
+    <div class="c">
+        <div class="offer-card rv">
+            <div class="offer-badge">OFERTA ESPECIAL DE LANÇAMENTO</div>
+            <span class="offer-ey">O que você vai receber</span>
+            <p class="offer-hl">Tudo que você precisa para vender mais<br><span class="amber">ou lucrar criando para outros</span></p>
+
+            <span class="entregaveis-title">📦 Incluso no seu acesso:</span>
+
+            <div class="entregavel-item">
+                <div class="entregavel-num">01</div>
+                <div class="entregavel-info">
+                    <strong>Protocolo Provenda</strong>
+                    <span>Um funcionário de IA que faz seu catálogo em menos de 3 minutos. Você só precisa digitar uma linha de comando.</span>
+                </div>
+                <div class="entregavel-price">R$ 197</div>
+            </div>
+
+            <div class="entregavel-item">
+                <div class="entregavel-num">02</div>
+                <div class="entregavel-info">
+                    <strong>Vídeo Explicativo</strong>
+                    <span>Aprenda em alguns minutos como começar a lucrar no modo infinito.</span>
+                </div>
+                <div class="entregavel-price">R$ 197</div>
+            </div>
+
+            <div class="entregavel-item">
+                <div class="entregavel-num">03</div>
+                <div class="entregavel-info">
+                    <strong>Método Venda Fácil</strong>
+                    <span>Um guia para você encontrar seu cliente e fechar venda logo na primeira semana.</span>
+                </div>
+                <div class="entregavel-price">R$ 197</div>
+            </div>
+
+            <div class="total-row">
+                <span class="total-label">Valor total dos itens:</span>
+                <span class="total-value">R$ 591,00</span>
+            </div>
+
+            <span class="offer-arrow">⬇️</span>
+            <span class="offer-today">Oferta especial de hoje</span>
+            <div class="price"><sup>R$</sup>47</div>
+            <p class="price-note">Acesso Anual • Pagamento único • Sem Mensalidades</p>
+            <p class="price-reforco">Use para vender mais no seu negócio<br><span class="amber">ou para gerar renda criando para outros</span></p>
+
+            <ul class="offer-list">
+                <li>Protocolo Provenda completo</li>
+                <li>Funciona em IAs gratuitas</li>
+                <li>Suporte para primeiros resultados</li>
+                <li>Atualizações inclusas</li>
+            </ul>
+            <button class="btn btn-full" onclick="openCO()">👉 QUERO O PROVENDA AGORA</button>
+            <div class="sec-row">
+                <span>🔒 Checkout Seguro</span>
+                <span>⚡ Acesso Imediato</span>
+                <span>↩️ Garantia 7 dias</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    <div class="c">
+        <div class="foot-logo">PROVENDA</div>
+        <p>© 2026 — LabFuture Provenda. Todos os direitos reservados.</p>
+    </div>
+</footer>
+
+<!-- FLOATING CTA — mobile -->
+<div id="float-cta">
+    <button class="float-btn" onclick="openCO()">
+        <span>👉 QUERO O PROVENDA</span>
+        <span class="float-price">R$47</span>
+    </button>
+</div>
+
+<!-- CHECKOUT MODAL -->
+<div class="overlay" id="overlay" onclick="overlayClick(event)">
+    <div class="modal" role="dialog" aria-modal="true">
+        <button class="m-close" onclick="closeCO()" aria-label="Fechar">✕</button>
+
+        <div id="formV">
+            <div class="m-head">
+                <div class="m-title">Garantir Acesso</div>
+                <div class="m-sub">Provenda — R$47 • Acesso Anual</div>
+            </div>
+            <div class="m-price-row">
+                <div class="m-price">R$47</div>
+                <div class="m-price-lbl"><b>Acesso Anual</b>Pagamento único • Sem mensalidades</div>
+            </div>
+            <div class="pay-tog">
+                <button class="pay-opt active" id="btnPix" onclick="setPay('pix',this)">📱 PIX</button>
+                <button class="pay-opt" id="btnCard" onclick="setPay('card',this)">💳 Cartão</button>
+            </div>
+
+            <!-- PIX -->
+            <div id="pixS" class="pix-s">
+                <p class="pix-key">Chave PIX: <strong style="color:#fff;">provenda@gmail.com</strong></p>
+                <div class="pix-qr">
+                    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100" height="100" fill="#fff"/>
+                        <rect x="5" y="5" width="35" height="35" fill="none" stroke="#000" stroke-width="4"/>
+                        <rect x="13" y="13" width="19" height="19" fill="#000"/>
+                        <rect x="60" y="5" width="35" height="35" fill="none" stroke="#000" stroke-width="4"/>
+                        <rect x="68" y="13" width="19" height="19" fill="#000"/>
+                        <rect x="5" y="60" width="35" height="35" fill="none" stroke="#000" stroke-width="4"/>
+                        <rect x="13" y="68" width="19" height="19" fill="#000"/>
+                        <rect x="60" y="60" width="8" height="8" fill="#000"/><rect x="72" y="60" width="8" height="8" fill="#000"/><rect x="84" y="60" width="8" height="8" fill="#000"/>
+                        <rect x="60" y="72" width="8" height="8" fill="#000"/><rect x="76" y="72" width="16" height="8" fill="#000"/>
+                        <rect x="60" y="84" width="8" height="8" fill="#000"/><rect x="72" y="84" width="8" height="8" fill="#000"/><rect x="84" y="84" width="8" height="8" fill="#000"/>
+                        <rect x="44" y="5" width="8" height="8" fill="#000"/><rect x="44" y="17" width="8" height="8" fill="#000"/><rect x="44" y="29" width="8" height="8" fill="#000"/>
+                        <rect x="44" y="44" width="8" height="8" fill="#000"/><rect x="44" y="56" width="8" height="8" fill="#000"/>
+                        <rect x="5" y="44" width="8" height="8" fill="#000"/><rect x="17" y="44" width="8" height="8" fill="#000"/><rect x="29" y="44" width="8" height="8" fill="#000"/>
+                    </svg>
+                </div>
+                <button class="pix-copy" id="pixCopyBtn" onclick="copyPix()">📋 Copiar chave PIX</button>
+                <p class="pix-info">Após o pagamento, clique em<br><strong style="color:#fff;">"Já fiz o pagamento"</strong> abaixo.</p>
+                <div class="fg" style="margin-top:18px;">
+                    <label class="fl">Seu e-mail (para receber o acesso)</label>
+                    <input type="email" class="fi" id="pEmail" placeholder="seu@email.com" autocomplete="email">
+                </div>
+                <button class="sub-btn" id="pBtn" onclick="doPix()">
+                    <span id="pTxt">✅ Já fiz o pagamento</span>
+                    <div class="spin" id="pSp"></div>
+                </button>
+            </div>
+
+            <!-- CARTÃO -->
+            <div id="cardS" style="display:none;">
+                <div class="fg"><label class="fl">Nome completo</label><input type="text" class="fi" id="cName" placeholder="Como está no cartão" autocomplete="cc-name"></div>
+                <div class="fg"><label class="fl">E-mail</label><input type="email" class="fi" id="cEmail" placeholder="seu@email.com" autocomplete="email"></div>
+                <div class="fg">
+                    <label class="fl">Número do cartão</label>
+                    <div class="iw">
+                        <input type="text" class="fi" id="cNum" placeholder="0000 0000 0000 0000" maxlength="19" inputmode="numeric" autocomplete="cc-number">
+                        <span class="cb" id="cBrand">💳</span>
+                    </div>
+                </div>
+                <div class="card-row">
+                    <div class="fg"><label class="fl">Validade</label><input type="text" class="fi" id="cExp" placeholder="MM/AA" maxlength="5" inputmode="numeric" autocomplete="cc-exp"></div>
+                    <div class="fg"><label class="fl">CVV</label><input type="text" class="fi" id="cCvv" placeholder="123" maxlength="4" inputmode="numeric" autocomplete="cc-csc"></div>
+                </div>
+                <button class="sub-btn" id="cBtn" onclick="doCard()">
+                    <span id="cTxt">🔒 PAGAR R$47</span>
+                    <div class="spin" id="cSp"></div>
+                </button>
+            </div>
+        </div>
+
+        <!-- SUCCESS -->
+        <div class="m-success" id="sucV">
+            <div class="suc-ic">🎉</div>
+            <div class="suc-title">Acesso Liberado!</div>
+            <p class="suc-sub">Seu acesso ao Provenda foi confirmado.<br>Verifique seu e-mail — as instruções chegam em instantes.</p>
+            <button class="btn" style="margin-top:26px;width:100%;" onclick="closeCO()">Perfeito, obrigado!</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ====================================================
+   PRELOADER
+   ==================================================== */
+window.addEventListener('load', function() {
+    setTimeout(function() {
+        var p = document.getElementById('pre');
+        p.style.transition = 'opacity 0.55s ease';
+        p.style.opacity = '0';
+        setTimeout(function() { p.remove(); initGSAP(); }, 600);
+    }, 1600);
+});
+
+/* ====================================================
+   GSAP HERO ANIMATION — char by char
+   ==================================================== */
+function initGSAP() {
+    gsap.registerPlugin(ScrollTrigger, TextPlugin);
+
+    // Split h1 into chars manually (no SplitType CDN needed)
+    var h1 = document.getElementById('heroH1');
+    var html = h1.innerHTML;
+    // wrap each character (not inside tags)
+    var split = '';
+    var inTag = false;
+    for(var i = 0; i < html.length; i++) {
+        if(html[i] === '<') { inTag = true; split += html[i]; continue; }
+        if(html[i] === '>') { inTag = false; split += html[i]; continue; }
+        if(inTag) { split += html[i]; continue; }
+        if(html[i] === ' ') { split += ' '; continue; }
+        split += '<span class="char" style="display:inline-block;opacity:0;transform:rotateX(90deg) translateY(20px)">' + html[i] + '</span>';
+    }
+    h1.innerHTML = split;
+    h1.style.perspective = '600px';
+
+    var chars = h1.querySelectorAll('.char');
+    gsap.to(chars, {
+        opacity: 1,
+        rotateX: 0,
+        y: 0,
+        duration: 0.5,
+        stagger: 0.04,
+        ease: 'back.out(1.7)',
+        delay: 0.2
+    });
+
+    // Micro-tremor loop na headline depois
+    gsap.to(chars, {
+        x: () => (Math.random() - 0.5) * 2,
+        y: () => (Math.random() - 0.5) * 2,
+        duration: 0.1,
+        stagger: { each: 0.02, repeat: -1, yoyo: true },
+        ease: 'none',
+        delay: 3.5,
+        repeatDelay: 5
+    });
+
+    // Hero sub-elements stagger
+    var heroEls = document.querySelectorAll('.hero-sub, .hero-reforco, .chips, .hero-cta');
+    gsap.to(heroEls, {
+        opacity: 1,
+        y: 0,
+        duration: 0.7,
+        stagger: 0.15,
+        ease: 'power2.out',
+        delay: 1.5
+    });
+}
+
+/* ====================================================
+   VFX CANVAS — DOT GRID reage ao mouse/toque
+   ==================================================== */
+(function(){
+    var cv = document.getElementById('bgc');
+    var ctx = cv.getContext('2d');
+    var w, h, dots = [];
+    var mouse = { x: -999, y: -999 };
+    var isTouch = 'ontouchstart' in window;
+
+    function resize() {
+        w = cv.width = window.innerWidth;
+        h = cv.height = window.innerHeight;
+        buildGrid();
+    }
+    window.addEventListener('resize', resize);
+
+    // Mouse/touch tracking
+    if(!isTouch) {
+        window.addEventListener('mousemove', function(e) {
+            mouse.x = e.clientX; mouse.y = e.clientY;
+        });
+    } else {
+        window.addEventListener('touchmove', function(e) {
+            if(e.touches.length > 0) {
+                mouse.x = e.touches[0].clientX;
+                mouse.y = e.touches[0].clientY;
+            }
+        }, { passive: true });
+        window.addEventListener('touchend', function() {
+            setTimeout(function() { mouse.x = -999; mouse.y = -999; }, 800);
+        });
+    }
+
+    var SPACING = isTouch ? 44 : 36;
+    var INFLUENCE = isTouch ? 100 : 140;
+
+    function buildGrid() {
+        dots = [];
+        var cols = Math.ceil(w / SPACING) + 2;
+        var rows = Math.ceil(h / SPACING) + 2;
+        for(var r = 0; r < rows; r++) {
+            for(var c = 0; c < cols; c++) {
+                dots.push({
+                    ox: c * SPACING,
+                    oy: r * SPACING,
+                    x: c * SPACING,
+                    y: r * SPACING,
+                    r: Math.random() * 0.8 + 0.4,
+                    a: Math.random() * 0.25 + 0.08
+                });
+            }
+        }
+    }
+
+    function loop() {
+        ctx.clearRect(0, 0, w, h);
+        for(var i = 0; i < dots.length; i++) {
+            var d = dots[i];
+            var dx = mouse.x - d.ox;
+            var dy = mouse.y - d.oy;
+            var dist = Math.sqrt(dx*dx + dy*dy);
+            var force = Math.max(0, 1 - dist / INFLUENCE);
+            var repel = force * 18;
+            var tx = d.ox - (dx / (dist||1)) * repel;
+            var ty = d.oy - (dy / (dist||1)) * repel;
+            d.x += (tx - d.x) * 0.12;
+            d.y += (ty - d.y) * 0.12;
+            var alpha = d.a + force * 0.5;
+            ctx.beginPath();
+            ctx.arc(d.x, d.y, d.r + force * 1.5, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(245,166,35,' + alpha + ')';
+            ctx.fill();
+        }
+        requestAnimationFrame(loop);
+    }
+    resize();
+    loop();
+})();
+
+/* ====================================================
+   CONFETTI — premium version
+   ==================================================== */
+(function(){
+    var cv = document.getElementById('cfc');
+    var ctx = cv.getContext('2d');
+    var w, h, pcs = [], running = false;
+
+    function resize() { w = cv.width = window.innerWidth; h = cv.height = window.innerHeight; }
+    window.addEventListener('resize', resize);
+    resize();
+
+    var COLS = ['#F5A623','#FFC246','#FFD700','#fff','#ff6b6b','#a8e6cf','#c9b1ff','#88d8b0'];
+
+    function Pc() { this.init(true); }
+    Pc.prototype.init = function(top) {
+        this.x = Math.random() * w;
+        this.y = top ? -20 - Math.random() * 200 : Math.random() * h;
+        this.wi = Math.random() * 12 + 5;
+        this.hi = Math.random() * 6 + 3;
+        this.col = COLS[Math.floor(Math.random() * COLS.length)];
+        this.vy = Math.random() * 4 + 1.5;
+        this.vx = (Math.random() - 0.5) * 3;
+        this.rot = Math.random() * Math.PI * 2;
+        this.rs = (Math.random() - 0.5) * 0.2;
+        this.shape = Math.random() > 0.5 ? 'rect' : 'circle';
+    };
+    Pc.prototype.update = function() {
+        this.x += this.vx; this.y += this.vy; this.rot += this.rs;
+        if(this.y > h + 20) this.init(true);
+    };
+    Pc.prototype.draw = function() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rot);
+        ctx.fillStyle = this.col;
+        if(this.shape === 'circle') {
+            ctx.beginPath();
+            ctx.arc(0, 0, this.wi/3, 0, Math.PI*2);
+            ctx.fill();
+        } else {
+            ctx.fillRect(-this.wi/2, -this.hi/2, this.wi, this.hi);
+        }
+        ctx.restore();
+    };
+
+    function loop() {
+        if(!running) return;
+        ctx.clearRect(0, 0, w, h);
+        pcs.forEach(function(p) { p.update(); p.draw(); });
+        requestAnimationFrame(loop);
+    }
+
+    window.launchConfetti = function() {
+        pcs = [];
+        for(var i = 0; i < 220; i++) pcs.push(new Pc());
+        running = true;
+        loop();
+        setTimeout(function() {
+            running = false;
+            ctx.clearRect(0, 0, w, h);
+            pcs = [];
+        }, 5500);
+    };
+})();
+
+/* ====================================================
+   SCROLL REVEAL
+   ==================================================== */
+document.addEventListener('DOMContentLoaded', function() {
+
+    var io = new IntersectionObserver(function(entries) {
+        entries.forEach(function(e) {
+            if(e.isIntersecting) {
+                e.target.style.transition = 'opacity .65s ease, transform .65s ease';
+                e.target.style.opacity = '1';
+                e.target.style.transform = 'translateY(0)';
+                io.unobserve(e.target);
+
+                // Counter animation
+                var counters = e.target.querySelectorAll('.counter-num[data-target]');
+                counters.forEach(function(el) {
+                    animateCounter(el);
+                });
+            }
+        });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.rv').forEach(function(el) { io.observe(el); });
+
+    // Steps
+    document.querySelectorAll('.step-row').forEach(function(el, i) {
+        var o = new IntersectionObserver(function(entries) {
+            entries.forEach(function(e) {
+                if(e.isIntersecting) {
+                    setTimeout(function() { e.target.classList.add('revealed'); }, i * 140);
+                    o.unobserve(e.target);
+                }
+            });
+        }, { threshold: 0.1 });
+        o.observe(el);
+    });
+
+    // Card number
+    var cn = document.getElementById('cNum');
+    if(cn) {
+        cn.addEventListener('input', function() {
+            var v = this.value.replace(/\D/g,'').slice(0,16);
+            this.value = v.replace(/(.{4})/g,'$1 ').trim();
+            var b = document.getElementById('cBrand');
+            if(b) b.textContent = v[0]==='4'?'💙':v[0]==='5'?'🔴':v.slice(0,2)==='37'?'🟡':'💳';
+        });
+    }
+    var ex = document.getElementById('cExp');
+    if(ex) {
+        ex.addEventListener('input', function() {
+            var v = this.value.replace(/\D/g,'').slice(0,4);
+            this.value = v.length >= 2 ? v.slice(0,2) + '/' + v.slice(2) : v;
+        });
+    }
+});
+
+/* ====================================================
+   COUNTER ANIMATION
+   ==================================================== */
+function animateCounter(el) {
+    var target = parseInt(el.getAttribute('data-target'));
+    var suffix = el.getAttribute('data-suffix') || '';
+    var start = 0;
+    var duration = 1800;
+    var startTime = null;
+    function step(ts) {
+        if(!startTime) startTime = ts;
+        var progress = Math.min((ts - startTime) / duration, 1);
+        var ease = 1 - Math.pow(1 - progress, 3);
+        var current = Math.floor(start + (target - start) * ease);
+        el.textContent = (current >= 1000 ? (current/1000).toFixed(1) + 'k' : current) + suffix;
+        if(progress < 1) requestAnimationFrame(step);
+        else el.textContent = (target >= 1000 ? (target/1000).toFixed(1) + 'k' : target) + suffix;
+    }
+    requestAnimationFrame(step);
+}
+
+/* ====================================================
+   TICKER
+   ==================================================== */
+(function(){
+    var items = [
+        { text:'Cardápios prontos em 3 minutos', highlight:false },
+        { text:'Funciona em IAs gratuitas', highlight:false },
+        { text:'R$3.200/mês com cardápios', highlight:true },
+        { text:'Sem designer • Sem Canva', highlight:false },
+        { text:'Acesso pelo celular', highlight:false },
+        { text:'Renda extra real', highlight:true },
+        { text:'Visual profissional imediato', highlight:false },
+        { text:'4.800+ usuários satisfeitos', highlight:true },
+        { text:'Pagamento único de R$47', highlight:false },
+        { text:'Resultado na primeira semana', highlight:false },
+    ];
+    var track = document.getElementById('tickerTrack');
+    if(!track) return;
+    // Duplicate for infinite scroll
+    var html = '';
+    for(var pass = 0; pass < 4; pass++) {
+        items.forEach(function(it) {
+            html += '<span class="ticker-item' + (it.highlight ? ' highlight' : '') + '"><span class="ti-dot"></span>' + it.text + '</span>';
+        });
+    }
+    track.innerHTML = html;
+})();
+
+/* ====================================================
+   URGENCY COUNTDOWN
+   ==================================================== */
+(function(){
+    var el = document.getElementById('countdown');
+    if(!el) return;
+    // Set target = end of today
+    var now = new Date();
+    var end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+    function tick() {
+        var diff = Math.max(0, end - new Date());
+        var h = Math.floor(diff / 3600000);
+        var m = Math.floor((diff % 3600000) / 60000);
+        var s = Math.floor((diff % 60000) / 1000);
+        el.textContent = pad(h) + ':' + pad(m) + ':' + pad(s);
+        if(diff > 0) setTimeout(tick, 1000);
+        else el.textContent = '00:00:00';
+    }
+    function pad(n) { return n < 10 ? '0'+n : n; }
+    tick();
+})();
+
+/* ====================================================
+   FLOATING CTA — aparece após scroll
+   ==================================================== */
+(function(){
+    var el = document.getElementById('float-cta');
+    if(!el) return;
+    var shown = false;
+    window.addEventListener('scroll', function() {
+        var scrolled = window.scrollY > window.innerHeight * 0.7;
+        if(scrolled !== shown) {
+            shown = scrolled;
+            el.classList.toggle('visible', shown);
+        }
+    }, { passive: true });
+})();
+
+/* ====================================================
+   CUSTOM CURSOR
+   ==================================================== */
+(function(){
+    var cur = document.getElementById('cursor');
+    var ring = document.getElementById('cursor-ring');
+    if(!cur || !ring) return;
+    var mx = 0, my = 0, rx = 0, ry = 0;
+
+    document.addEventListener('mousemove', function(e) {
+        mx = e.clientX; my = e.clientY;
+        cur.style.left = mx + 'px';
+        cur.style.top = my + 'px';
+    });
+
+    function animRing() {
+        rx += (mx - rx) * 0.14;
+        ry += (my - ry) * 0.14;
+        ring.style.left = rx + 'px';
+        ring.style.top = ry + 'px';
+        requestAnimationFrame(animRing);
+    }
+    animRing();
+
+    document.querySelectorAll('button, a, .btn, .pay-opt').forEach(function(el) {
+        el.addEventListener('mouseenter', function() {
+            cur.style.width = '20px';
+            cur.style.height = '20px';
+            ring.style.width = '56px';
+            ring.style.height = '56px';
+        });
+        el.addEventListener('mouseleave', function() {
+            cur.style.width = '12px';
+            cur.style.height = '12px';
+            ring.style.width = '36px';
+            ring.style.height = '36px';
+        });
+    });
+})();
+
+/* ====================================================
+   NAV — urgency bar offset
+   ==================================================== */
+(function(){
+    var bar = document.getElementById('urgency-bar');
+    var nav = document.getElementById('mainNav');
+    if(!bar || !nav) return;
+    // Hides urgency bar on scroll
+    window.addEventListener('scroll', function() {
+        if(window.scrollY > 100) {
+            bar.style.transform = 'translateY(-100%)';
+            nav.classList.add('no-bar');
+        } else {
+            bar.style.transform = 'translateY(0)';
+            nav.classList.remove('no-bar');
+        }
+    }, { passive: true });
+})();
+
+/* ====================================================
+   TESTIMONIAL SCROLL
+   ==================================================== */
+(function(){
+    var t = document.getElementById('testoTrack');
+    if(!t) return;
+    var pos = 0, dir = 1, paused = false;
+    t.addEventListener('mouseenter', function() { paused = true; });
+    t.addEventListener('mouseleave', function() { paused = false; });
+    t.addEventListener('touchstart', function() { paused = true; }, { passive: true });
+    t.addEventListener('touchend', function() { setTimeout(function(){ paused = false; }, 2500); });
+    function go() {
+        if(!paused) {
+            pos += 0.5 * dir;
+            var mx = t.scrollWidth - t.parentElement.clientWidth;
+            if(pos >= mx) dir = -1;
+            if(pos <= 0) dir = 1;
+            t.style.transform = 'translateX(-' + pos + 'px)';
+        }
+        requestAnimationFrame(go);
+    }
+    go();
+})();
+
+/* ====================================================
+   CHECKOUT MODAL
+   ==================================================== */
+var OV = document.getElementById('overlay');
+
+function openCO() {
+    OV.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    resetModal();
+}
+
+function closeCO() {
+    OV.classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+function overlayClick(e) {
+    if(e.target === OV) closeCO();
+}
+
+document.addEventListener('keydown', function(e) {
+    if(e.key === 'Escape') closeCO();
+});
+
+function resetModal() {
+    document.getElementById('formV').style.display = 'block';
+    document.getElementById('sucV').style.display = 'none';
+    setPay('pix', document.getElementById('btnPix'));
+    var fields = ['pEmail','cName','cEmail','cNum','cExp','cCvv'];
+    fields.forEach(function(id) {
+        var el = document.getElementById(id);
+        if(el) { el.value = ''; el.classList.remove('err'); }
+    });
+}
+
+function setPay(type, btn) {
+    document.querySelectorAll('.pay-opt').forEach(function(b) { b.classList.remove('active'); });
+    if(btn) btn.classList.add('active');
+    var px = document.getElementById('pixS');
+    var cd = document.getElementById('cardS');
+    if(px) px.style.display = type === 'pix' ? 'block' : 'none';
+    if(cd) cd.style.display = type === 'card' ? 'block' : 'none';
+}
+
+function copyPix() {
+    var key = 'provenda@gmail.com';
+    if(navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(key).catch(function(){});
+    } else {
+        var ta = document.createElement('textarea');
+        ta.value = key; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+        document.body.removeChild(ta);
+    }
+    var b = document.getElementById('pixCopyBtn');
+    if(b) { b.textContent = '✅ Copiado!'; setTimeout(function(){ b.textContent = '📋 Copiar chave PIX'; }, 2000); }
+}
+
+function isEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+
+function errField(id) {
+    var el = document.getElementById(id);
+    if(!el) return;
+    el.classList.add('err');
+    el.addEventListener('input', function() { el.classList.remove('err'); }, { once: true });
+    el.focus();
+}
+
+function setLoad(btnId, spId, txtId, on) {
+    var btn = document.getElementById(btnId);
+    var sp = document.getElementById(spId);
+    var tx = document.getElementById(txtId);
+    if(btn) btn.disabled = on;
+    if(sp) sp.style.display = on ? 'block' : 'none';
+    if(tx) tx.style.display = on ? 'none' : 'inline';
+}
+
+function doPix() {
+    var em = document.getElementById('pEmail').value.trim();
+    if(!isEmail(em)) { errField('pEmail'); return; }
+    setLoad('pBtn','pSp','pTxt', true);
+    setTimeout(function() {
+        setLoad('pBtn','pSp','pTxt', false);
+        showSuccess();
+    }, 2200);
+}
+
+function doCard() {
+    var nm = document.getElementById('cName').value.trim();
+    var em = document.getElementById('cEmail').value.trim();
+    var nu = document.getElementById('cNum').value.replace(/\s/g,'');
+    var ex = document.getElementById('cExp').value;
+    var cv = document.getElementById('cCvv').value;
+    var ok = true;
+    if(!nm) { errField('cName'); ok = false; }
+    if(!isEmail(em)) { errField('cEmail'); ok = false; }
+    if(nu.length < 16) { errField('cNum'); ok = false; }
+    if(ex.length < 5) { errField('cExp'); ok = false; }
+    if(cv.length < 3) { errField('cCvv'); ok = false; }
+    if(!ok) return;
+    setLoad('cBtn','cSp','cTxt', true);
+    setTimeout(function() {
+        setLoad('cBtn','cSp','cTxt', false);
+        showSuccess();
+    }, 2500);
+}
+
+function showSuccess() {
+    document.getElementById('formV').style.display = 'none';
+    var sv = document.getElementById('sucV');
+    sv.style.cssText = 'display:block;opacity:0;transform:scale(0.94);transition:opacity .4s,transform .4s';
+    requestAnimationFrame(function() {
+        sv.style.opacity = '1';
+        sv.style.transform = 'scale(1)';
+    });
+    launchConfetti();
+}
+</script>
+</body>
+</html>
